@@ -55,6 +55,16 @@ class MessageHandlerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_data(as_text=True), 'Missing OpenID')
 
+    def test_post_accepts_message_push_configuration_check(self):
+        response = self.client.post(
+            '/',
+            headers={'x-wx-source': 'wechat'},
+            json={'action': 'CheckContainerPath'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_data(as_text=True), 'success')
+
     @patch('wxcloudrun.views.urllib_request.urlopen')
     def test_post_sends_cloud_call_and_returns_success(self, mock_urlopen):
         mock_urlopen.return_value = FakeWeChatResponse()

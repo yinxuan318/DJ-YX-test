@@ -76,15 +76,20 @@ def receive_wechat_message():
     :return: 微信云托管消息推送处理结果
     """
     source = request.headers.get('x-wx-source')
-    openid = request.headers.get('x-wx-openid')
 
     if not source:
         return Response('Invalid request source', status=400, mimetype='text/plain')
-    if not openid:
-        return Response('Missing OpenID', status=400, mimetype='text/plain')
 
     message_body = request.get_json(silent=True)
     raw_body = request.get_data(as_text=True)
+    if isinstance(message_body, dict) and message_body.get('action') == 'CheckContainerPath':
+        app.logger.info('wechat message push configuration check received')
+        return Response('success', mimetype='text/plain')
+
+    openid = request.headers.get('x-wx-openid')
+    if not openid:
+        return Response('Missing OpenID', status=400, mimetype='text/plain')
+
     if isinstance(message_body, dict):
         message_type = message_body.get('MsgType', message_body.get('msgtype'))
         message_content = message_body.get('Content', message_body.get('content'))
