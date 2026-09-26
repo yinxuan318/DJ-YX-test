@@ -55,15 +55,36 @@ class MessageHandlerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_data(as_text=True), 'Missing OpenID')
 
-    def test_post_accepts_message_push_configuration_check(self):
+    def test_post_accepts_message_push_configuration_check_without_headers(self):
         response = self.client.post(
             '/',
-            headers={'x-wx-source': 'wechat'},
-            json={'action': 'CheckContainerPath'}
+            content_type='application/json',
+            data='{"action":"CheckContainerPath"}'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, 'text/plain')
+        self.assertEqual(response.get_data(as_text=True), 'success')
+
+    @patch('wxcloudrun.views.urllib_request.urlopen')
+    def test_post_accepts_x_wx_sources_fallback(self, mock_urlopen):
+        mock_urlopen.return_value = FakeWeChatResponse()
+
+        response = self.client.post(
+            '/',
+            headers={
+                'x-wx-sources': 'wechat',
+                'x-wx-openid': 'openid-test'
+            },
+            json={
+                'MsgType': 'text',
+                'Content': 'hello'
+            }
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_data(as_text=True), 'success')
+        mock_urlopen.assert_called_once()
 
     @patch('wxcloudrun.views.urllib_request.urlopen')
     def test_post_sends_cloud_call_and_returns_success(self, mock_urlopen):
